@@ -13,15 +13,21 @@ export default async () => {
     ['horse-tv', fetchHorseTvEvents]
   ];
   const results = await Promise.all(sources.map(async ([name, fetcher]) => {
+    const startedAt = Date.now();
     try {
       const result = await fetcher();
-      return { name, ok: true, count: result.events?.length || 0, error: result.error || null, events: result.events || [] };
+      const events = result?.events || [];
+      console.log('Scraper result', JSON.stringify({ name, ok: true, count: events.length, reportedError: result?.error || null, durationMs: Date.now() - startedAt }));
+      return { name, ok: true, count: events.length, error: result?.error || null, events };
     } catch (error) {
+      console.error('Scraper failed', JSON.stringify({ name, message: error?.message || String(error), stack: error?.stack || null, durationMs: Date.now() - startedAt }));
       return { name, ok: false, count: 0, error: error?.message || String(error), events: [] };
     }
   }));
   const events = results.flatMap((result) => result.events);
+  console.log('Cache write started', JSON.stringify({ count: events.length }));
   await setCache(events);
+  console.log('Cache write completed', JSON.stringify({ count: events.length }));
   const summary = { ok: true, count: events.length, sources: results.map(({ name, ok, count, error }) => ({ name, ok, count, error })) };
   console.log('Schedule refresh completed', JSON.stringify(summary));
   return new Response(JSON.stringify(summary), { headers: { 'content-type': 'application/json' } });
