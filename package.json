@@ -1,0 +1,1 @@
+{"name":"sportguidatv","version":"0.1.0","private":true,"type":"module","scripts":{"dev":"netlify dev"},"dependencies":{"@netlify/blobs":"latest","node-fetch":"latest","telegraf":"latest"},"devDependencies":{"netlify-cli":"latest"}}
