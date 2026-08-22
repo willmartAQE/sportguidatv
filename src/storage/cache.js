@@ -1,6 +1,21 @@
-import { getStore } from '@netlify/blobs';
+import { connectLambda } from '@netlify/blobs';
 
-const store = () => getStore({ name: 'sport-schedule', consistency: 'strong' });
+export function configureBlobs(event) {
+  connectLambda(event);
+}
 
-export async function getCache() { return (await store().get('events', { type: 'json' })) || { updatedAt: null, events: [] }; }
-export async function setCache(events) { const value = { updatedAt: new Date().toISOString(), events }; await store().setJSON('events', value); return value; }
+export async function getCache(event) {
+  configureBlobs(event);
+  const { getStore } = await import('@netlify/blobs');
+  const store = getStore({ name: 'sport-schedule', consistency: 'strong' });
+  return (await store.get('events', { type: 'json' })) || { updatedAt: null, events: [] };
+}
+
+export async function setCache(event, events) {
+  configureBlobs(event);
+  const { getStore } = await import('@netlify/blobs');
+  const store = getStore({ name: 'sport-schedule', consistency: 'strong' });
+  const value = { updatedAt: new Date().toISOString(), events };
+  await store.setJSON('events', value);
+  return value;
+}
