@@ -4,12 +4,10 @@ import { menuText, formatSchedule } from '../../src/bot/messages.js';
 import { filterEvents } from '../../src/parser/events.js';
 import { getCache } from '../../src/storage/cache.js';
 
-export const config = { path: '/api/telegram-webhook' };
-
-export default async (req) => {
-  if (req.method !== 'POST') return new Response('Method Not Allowed', { status: 405 });
+export const handler = async (event) => {
+  if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  if (secret && req.headers.get('x-telegram-bot-api-secret-token') !== secret) return new Response('Unauthorized', { status: 401 });
+  if (secret && event.headers['x-telegram-bot-api-secret-token'] !== secret) return { statusCode: 401, body: 'Unauthorized' };
   const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
   bot.start((ctx) => ctx.reply(menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard() }));
   bot.action('menu:sports', async (ctx) => { await ctx.answerCbQuery(); await ctx.editMessageText(menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard() }); });
@@ -21,6 +19,11 @@ export default async (req) => {
   });
   bot.action('day:today', async (ctx) => { await ctx.answerCbQuery('Aggiornato'); await ctx.editMessageText(menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard() }); });
   bot.action('day:tomorrow', async (ctx) => { await ctx.answerCbQuery(); await ctx.editMessageText('📅 <b>Domani</b>\n\nSeleziona uno sport per vedere gli eventi disponibili.', { parse_mode: 'HTML', reply_markup: sportKeyboard() }); });
-  await bot.handleUpdate(await req.json());
-  return new Response('OK');
+  try {
+    await bot.handleUpdate(JSON.parse(event.body));
+    return { statusCode: 200, body: 'OK' };
+  } catch (error) {
+    console.error('Telegram webhook error', error);
+    return { statusCode: 500, body: 'Webhook error' };
+  }
 };
