@@ -9,7 +9,7 @@ function headerValue(headers = {}, name) {
   return key ? headers[key] : undefined;
 }
 
-const sportLabels = { tennis: 'Tennis', f1: 'Formula 1', motogp: 'MotoGP', basket: 'Basket', volley: 'Volley' };
+const sportLabels = { tennis: 'Tennis', f1: 'Formula 1', motogp: 'MotoGP', basket: 'Basket', volley: 'Volley', equitazione: 'Equitazione' };
 const italyDate = (offset = 0) => { const date = new Date(); date.setDate(date.getDate() + offset); return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(date); };
 
 export const handler = async (event) => {
