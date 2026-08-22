@@ -3,8 +3,9 @@ import { fetchDaznFootballEvents } from '../../src/scrapers/dazn.js';
 import { setCache } from '../../src/storage/cache.js';
 
 export default async () => {
-  const [sky, dazn] = await Promise.all([fetchSkyEvents(), fetchDaznFootballEvents()]);
-  const events = [...sky.events, ...dazn.events];
-  setCache(events);
-  return new Response(JSON.stringify({ ok: true, count: events.length }), { headers: { 'content-type': 'application/json' } });
+  const results = await Promise.allSettled([fetchSkyEvents(), fetchDaznFootballEvents()]);
+  const events = results.flatMap((result) => result.status === 'fulfilled' ? result.value.events : []);
+  const errors = results.flatMap((result) => result.status === 'rejected' ? [result.reason.message] : []);
+  await setCache(events);
+  return new Response(JSON.stringify({ ok: true, count: events.length, errors }), { headers: { 'content-type': 'application/json' } });
 };

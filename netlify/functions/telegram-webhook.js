@@ -12,26 +12,9 @@ export const handler = async (event) => {
   bot.start((ctx) => ctx.reply(menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard() }));
   bot.action('menu:sports', async (ctx) => { await ctx.answerCbQuery(); await ctx.editMessageText(menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard() }); });
   bot.action('sport:calcio', async (ctx) => { await ctx.answerCbQuery(); await ctx.editMessageText(footballText(), { parse_mode: 'HTML', reply_markup: footballKeyboard() }); });
-  bot.action(/^sport:(?!calcio)(.+)$/, async (ctx) => {
-    await ctx.answerCbQuery();
-    const sport = ctx.match[1];
-    const events = filterEvents(getCache().events, sport);
-    await ctx.editMessageText(formatSchedule(sport, 'today', events), { parse_mode: 'HTML', reply_markup: backKeyboard() });
-  });
-  bot.action(/^football:(serie-a|serie-b|serie-c)$/, async (ctx) => {
-    await ctx.answerCbQuery();
-    const competition = ctx.match[1];
-    const label = competition.replace('serie-', 'Serie ').toUpperCase();
-    const events = filterEvents(getCache().events, 'calcio', competition);
-    await ctx.editMessageText(formatSchedule('Calcio', 'today', events, label), { parse_mode: 'HTML', reply_markup: backKeyboard() });
-  });
+  bot.action(/^sport:(?!calcio)(.+)$/, async (ctx) => { await ctx.answerCbQuery(); const sport = ctx.match[1]; const cache = await getCache(); const events = filterEvents(cache.events, sport, null, new Date().toISOString().slice(0, 10)); await ctx.editMessageText(formatSchedule(sport, 'today', events), { parse_mode: 'HTML', reply_markup: backKeyboard() }); });
+  bot.action(/^football:(serie-a|serie-b|serie-c)$/, async (ctx) => { await ctx.answerCbQuery(); const competition = ctx.match[1]; const cache = await getCache(); const events = filterEvents(cache.events, 'calcio', competition, new Date().toISOString().slice(0, 10)); const label = competition.replace('serie-', 'Serie ').toUpperCase(); await ctx.editMessageText(formatSchedule('Calcio', 'today', events, label), { parse_mode: 'HTML', reply_markup: backKeyboard() }); });
   bot.action('day:today', async (ctx) => { await ctx.answerCbQuery('Aggiornato'); await ctx.editMessageText(menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard() }); });
   bot.action('day:tomorrow', async (ctx) => { await ctx.answerCbQuery(); await ctx.editMessageText('📅 <b>Domani</b>\n\nSeleziona uno sport per vedere gli eventi disponibili.', { parse_mode: 'HTML', reply_markup: sportKeyboard() }); });
-  try {
-    await bot.handleUpdate(JSON.parse(event.body));
-    return { statusCode: 200, body: 'OK' };
-  } catch (error) {
-    console.error('Telegram webhook error', error);
-    return { statusCode: 500, body: 'Webhook error' };
-  }
+  try { await bot.handleUpdate(JSON.parse(event.body)); return { statusCode: 200, body: 'OK' }; } catch (error) { console.error('Telegram webhook error', error); return { statusCode: 500, body: 'Webhook error' }; }
 };
