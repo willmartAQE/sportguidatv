@@ -5,6 +5,13 @@ export const sportKeyboard = () => ({ inline_keyboard: [
   [{ text: '📅 Domani', callback_data: 'day:tomorrow' }, { text: '🔄 Aggiorna', callback_data: 'day:today' }]
 ] });
 
+export const footballKeyboard = () => ({ inline_keyboard: [
+  [{ text: '🏆 Serie A', callback_data: 'football:serie-a' }],
+  [{ text: '🥈 Serie B', callback_data: 'football:serie-b' }],
+  [{ text: '🥉 Serie C', callback_data: 'football:serie-c' }],
+  [{ text: '⬅️ Sport', callback_data: 'menu:sports' }]
+] });
+
 export const backKeyboard = () => ({ inline_keyboard: [
   [{ text: '⬅️ Sport', callback_data: 'menu:sports' }, { text: '📅 Domani', callback_data: 'day:tomorrow' }]
 ] });
