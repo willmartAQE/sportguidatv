@@ -1,11 +1,15 @@
 import * as cheerio from 'cheerio';
 
-const HORSE_TV_URL = 'https://www.horsetv.it/';
+const HORSE_TV_URL = 'https://guidaoggiintv.it/guida-tv-canale/Horse-tv/oggi';
+const TIME_RE = /\b(?:[01]\d|2[0-3]):[0-5]\d\b/;
 
-function parseLocalEvent($, element) {
+function parseHorseEvent($, element) {
   const text = $(element).text().replace(/\s+/g, ' ').trim();
-  if (!text || text.length < 8) return null;
-  return { source: 'horse-tv', title: text.slice(0, 240), startTime: null };
+  const time = text.match(TIME_RE)?.[0];
+  if (!time || text.length < 8) return null;
+  const title = text.replace(time, '').replace(/IN ONDA/g, '').trim();
+  if (!title) return null;
+  return { source: 'horse-tv', title: title.slice(0, 240), startTime: time };
 }
 
 export async function fetchHorseTvEvents() {
@@ -16,13 +20,16 @@ export async function fetchHorseTvEvents() {
     const html = await response.text();
     console.log('Horse TV HTTP response', JSON.stringify({ url: HORSE_TV_URL, status: response.status, contentType: response.headers.get('content-type'), bytes: html.length }));
     const $ = cheerio.load(html);
-    const candidates = $('[class*="event"], [class*="program"], article, li').toArray();
-    const events = candidates.map((element) => parseLocalEvent($, element)).filter(Boolean);
-    console.log('Horse TV parsing result', JSON.stringify({ rawMatches: candidates.length, filteredEvents: events.length }));
+    const seen = new Set();
+    const events = [];
+    $('article, li, tr').each((_, element) => {
+      const event = parseHorseEvent($, element);
+      if (!event) return;
+      const key = `${event.startTime}|${event.title.toLowerCase()}`;
+      if (!seen.has(key)) { seen.add(key); events.push(event); }
+    });
+    console.log('Horse TV parsing result', JSON.stringify({ rawMatches: $('article, li, tr').length, filteredEvents: events.length }));
     return { events };
-  } catch (error) {
-    console.error('Horse TV request failed', JSON.stringify({ name: error?.name || null, message: error?.message || String(error) }));
-    throw error;
   } finally {
     clearTimeout(timeout);
   }
