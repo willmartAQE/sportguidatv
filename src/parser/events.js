@@ -4,7 +4,8 @@ const SPORT_RULES = {
   f1: /formula\s*1|f1|gran premio/i,
   motogp: /motogp|moto\s*2|moto\s*3|superbike/i,
   basket: /basket|nba|eurolega|eurocup|lba/i,
-  volley: /volley|pallavolo|cev|superlega/i
+  volley: /volley|pallavolo|cev|superlega/i,
+  equitazione: /equitazione|ippica|cavalli|dressage|salto ostacoli/i
 };
 
 const FOOTBALL_RULES = {
