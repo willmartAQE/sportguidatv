@@ -3,7 +3,10 @@ import { fetchDaznFootballEvents } from '../../src/scrapers/dazn.js';
 import { fetchHorseTvEvents } from '../../src/scrapers/horse-tv.js';
 import { setCache } from '../../src/storage/cache.js';
 
+export const config = { schedule: '*/15 * * * *' };
+
 export default async () => {
+  console.log('Schedule refresh started');
   const sources = [
     ['sky', fetchSkyEvents],
     ['dazn', fetchDaznFootballEvents],
@@ -19,5 +22,7 @@ export default async () => {
   }));
   const events = results.flatMap((result) => result.events);
   await setCache(events);
-  return new Response(JSON.stringify({ ok: true, count: events.length, sources: results.map(({ name, ok, count, error }) => ({ name, ok, count, error })) }), { headers: { 'content-type': 'application/json' } });
+  const summary = { ok: true, count: events.length, sources: results.map(({ name, ok, count, error }) => ({ name, ok, count, error })) };
+  console.log('Schedule refresh completed', JSON.stringify(summary));
+  return new Response(JSON.stringify(summary), { headers: { 'content-type': 'application/json' } });
 };
