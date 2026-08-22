@@ -12,6 +12,13 @@ function headerValue(headers = {}, name) {
 const sportLabels = { tennis: 'Tennis', f1: 'Formula 1', motogp: 'MotoGP', basket: 'Basket', volley: 'Volley', equitazione: 'Equitazione' };
 const italyDate = (offset = 0) => { const date = new Date(); date.setDate(date.getDate() + offset); return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Rome' }).format(date); };
 
+async function showSportsSchedule(ctx, dayOffset = 0) {
+  const cache = await getCache();
+  const day = dayOffset === 1 ? 'tomorrow' : 'today';
+  const events = cache.events || [];
+  await ctx.editMessageText(dayOffset === 1 ? '📅 <b>Domani</b>\n\nSeleziona uno sport:' : menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard() });
+}
+
 export const handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method Not Allowed' };
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
