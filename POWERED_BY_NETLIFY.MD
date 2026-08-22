@@ -11,9 +11,6 @@ You can find the "Powered by Netlify" badge in the footer of our website: [https
 ### Light Mode Badge
 ![Powered by Netlify](https://imgs.search.brave.com/dq3DQhM9ranCt8MVl6zhcnjeVbg2xZa_0CdNDF7PkLA/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly93d3cu/bmV0bGlmeS5jb20v/YXNzZXRzL2xvZ29z/L2Z1bGwvbGFyZ2Uv/bGlnaHRtb2RlL2xv/Z28tbmV0bGlmeS1s/YXJnZS1mdWxsY29s/b3ItbGlnaHRtb2Rl/LnN2Zw)
 
-### Dark Mode Badge
-![Powered by Netlify](https://www.netlify.com/v3/img/components/full-logo-color.svg)
-
 ## Deployment Status
 
 [![Netlify Status](https://app.netlify.com/projects/sportguidatv)](https://app.netlify.com/projects/sportguidatv)
