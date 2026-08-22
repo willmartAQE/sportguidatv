@@ -1,6 +1,6 @@
 import { Telegraf } from 'telegraf';
-import { sportKeyboard, backKeyboard } from '../../src/bot/keyboard.js';
-import { menuText, formatSchedule } from '../../src/bot/messages.js';
+import { sportKeyboard, footballKeyboard, backKeyboard } from '../../src/bot/keyboard.js';
+import { menuText, footballText, formatSchedule } from '../../src/bot/messages.js';
 import { filterEvents } from '../../src/parser/events.js';
 import { getCache } from '../../src/storage/cache.js';
 
@@ -11,11 +11,19 @@ export const handler = async (event) => {
   const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
   bot.start((ctx) => ctx.reply(menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard() }));
   bot.action('menu:sports', async (ctx) => { await ctx.answerCbQuery(); await ctx.editMessageText(menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard() }); });
-  bot.action(/^sport:(.+)$/, async (ctx) => {
+  bot.action('sport:calcio', async (ctx) => { await ctx.answerCbQuery(); await ctx.editMessageText(footballText(), { parse_mode: 'HTML', reply_markup: footballKeyboard() }); });
+  bot.action(/^sport:(?!calcio)(.+)$/, async (ctx) => {
     await ctx.answerCbQuery();
     const sport = ctx.match[1];
     const events = filterEvents(getCache().events, sport);
     await ctx.editMessageText(formatSchedule(sport, 'today', events), { parse_mode: 'HTML', reply_markup: backKeyboard() });
+  });
+  bot.action(/^football:(serie-a|serie-b|serie-c)$/, async (ctx) => {
+    await ctx.answerCbQuery();
+    const competition = ctx.match[1];
+    const label = competition.replace('serie-', 'Serie ').toUpperCase();
+    const events = filterEvents(getCache().events, 'calcio', competition);
+    await ctx.editMessageText(formatSchedule('Calcio', 'today', events, label), { parse_mode: 'HTML', reply_markup: backKeyboard() });
   });
   bot.action('day:today', async (ctx) => { await ctx.answerCbQuery('Aggiornato'); await ctx.editMessageText(menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard() }); });
   bot.action('day:tomorrow', async (ctx) => { await ctx.answerCbQuery(); await ctx.editMessageText('📅 <b>Domani</b>\n\nSeleziona uno sport per vedere gli eventi disponibili.', { parse_mode: 'HTML', reply_markup: sportKeyboard() }); });

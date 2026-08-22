@@ -7,7 +7,19 @@ const SPORT_RULES = {
   volley: /volley|pallavolo|cev|superlega/i
 };
 
-export function filterEvents(events, sport) {
-  const rule = SPORT_RULES[sport];
-  return events.filter((event) => event.live !== false && (!rule || rule.test(`${event.title} ${event.description || ''}`)));
+const FOOTBALL_RULES = {
+  'serie-a': /serie\s*a|serie a enilive/i,
+  'serie-b': /serie\s*b|serie bkt/i,
+  'serie-c': /serie\s*c|serie c sky/i
+};
+
+export function filterEvents(events, sport, competition = null) {
+  const sportRule = SPORT_RULES[sport];
+  const competitionRule = competition ? FOOTBALL_RULES[competition] : null;
+  return events.filter((event) => {
+    const text = `${event.title || ''} ${event.description || ''}`;
+    const sportMatches = !sportRule || sportRule.test(text);
+    const competitionMatches = !competitionRule || competitionRule.test(text);
+    return event.live !== false && sportMatches && competitionMatches;
+  });
 }
