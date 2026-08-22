@@ -18,7 +18,7 @@ export function filterEvents(events, sport, competition = null, date = null) {
   const sportRule = SPORT_RULES[sport];
   const competitionRule = competition ? FOOTBALL_RULES[competition] : null;
   return events.filter((event) => {
-    const text = `${event.title || ''} ${event.description || ''}`;
+    const text = `${event.sport || ''} ${event.title || ''} ${event.description || ''}`;
     return event.live !== false && (!date || event.date === date) && (!sportRule || sportRule.test(text)) && (!competitionRule || competitionRule.test(`${event.competition || ''} ${text}`));
   }).sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
 }
