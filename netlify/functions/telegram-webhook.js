@@ -1,45 +1,67 @@
-const { readCache } = require('../../src/storage/cache.js');
-const { CATEGORIES, mainKeyboard } = require('../../src/bot/keyboard.js');
+const fs = require('fs/promises');
+const path = require('path');
 
+const CATEGORIES = ['Equitazione', 'Formula 1', 'MotoGP', 'Sky Calcio', 'Tennis', 'Basket', 'Golf', 'Sport'];
 const CATEGORY_RULES = {
-  'Equitazione': event => /horse|equtv|equitaz|ippica|equestre/i.test(`${event.source || ''} ${event.channel || ''} ${event.title || ''}`),
-  'Formula 1': event => /f1|formula ?1|formula one/i.test(`${event.channel || ''} ${event.title || ''}`),
-  'MotoGP': event => /motogp|moto gp|motorsport|motociclismo/i.test(`${event.channel || ''} ${event.title || ''}`),
-  'Sky Calcio': event => /calcio|football|soccer|serie ?[abc]|champions|europa league|conference league|premier league|la liga|bundesliga|ligue 1/i.test(`${event.channel || ''} ${event.title || ''}`),
-  'Tennis': event => /tennis|supertennis/i.test(`${event.channel || ''} ${event.title || ''}`),
-  'Basket': event => /basket|nba|eurolega/i.test(`${event.channel || ''} ${event.title || ''}`),
-  'Golf': event => /golf/i.test(`${event.channel || ''} ${event.title || ''}`),
-  'Sport': () => true
+  'Equitazione': /horse|equtv|equitaz|ippica|equestre/i,
+  'Formula 1': /f1|formula ?1|formula one/i,
+  'MotoGP': /motogp|moto gp|motorsport|motociclismo/i,
+  'Sky Calcio': /calcio|football|soccer|serie ?[abc]|champions|europa league|conference league|premier league|la liga|bundesliga|ligue 1/i,
+  'Tennis': /tennis|supertennis/i,
+  'Basket': /basket|nba|eurolega/i,
+  'Golf': /golf/i,
+  'Sport': /.*/i
 };
+
+function keyboard() {
+  return { inline_keyboard: CATEGORIES.map(category => [{ text: category, callback_data: `category:${category}` }]) };
+}
+
+async function readEvents() {
+  const candidates = [
+    path.join(process.cwd(), 'events.json'),
+    path.join(process.cwd(), 'data', 'events.json'),
+    path.join(process.cwd(), 'src', 'storage', 'events.json')
+  ];
+  for (const file of candidates) {
+    try {
+      const value = JSON.parse(await fs.readFile(file, 'utf8'));
+      return Array.isArray(value) ? value : (value.events || []);
+    } catch (_) {}
+  }
+  return [];
+}
 
 function formatEvents(events, category) {
   if (!events.length) return `📺 ${category}\n\nNessun evento trovato per oggi.`;
-  return `📺 ${category}\n\n${events.map(event => `${event.startTime || '--:--'} — ${event.title}${event.channel ? ` (${event.channel})` : ''}`).join('\n')}`;
+  return `📺 ${category}\n\n${events.map(event => `${event.startTime || '--:--'} — ${event.title || 'Evento'}${event.channel ? ` (${event.channel})` : ''}`).join('\n')}`;
 }
 
 async function telegram(token, method, payload) {
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+  if (!response.ok) throw new Error(`Telegram HTTP ${response.status}`);
   return response.json();
 }
 
 exports.handler = async function handler(event) {
+  if (event.httpMethod !== 'POST') return { statusCode: 200, body: 'ok' };
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) return { statusCode: 500, body: 'Missing TELEGRAM_BOT_TOKEN' };
-  const update = JSON.parse(event.body || '{}');
+  let update;
+  try { update = JSON.parse(event.body || '{}'); } catch (_) { return { statusCode: 400, body: 'Invalid JSON' }; }
   const message = update.message;
   const callback = update.callback_query;
   const chatId = message?.chat?.id || callback?.message?.chat?.id;
   if (!chatId) return { statusCode: 200, body: 'ok' };
-  const cache = await readCache();
-  const events = Array.isArray(cache) ? cache : (cache?.events || []);
-  const selected = callback?.data?.startsWith('category:') ? callback.data.slice('category:'.length) : (message?.text === '/start' ? null : message?.text);
+  const events = await readEvents();
+  const selected = callback?.data?.startsWith('category:') ? callback.data.slice(9) : null;
   if (selected && CATEGORIES.includes(selected)) {
-    const rule = CATEGORY_RULES[selected] || CATEGORY_RULES.Sport;
-    const filtered = events.filter(rule);
-    await telegram(token, 'sendMessage', { chat_id: chatId, text: formatEvents(filtered, selected), reply_markup: mainKeyboard().reply_markup });
+    const rule = CATEGORY_RULES[selected];
+    const filtered = events.filter(event => rule.test(`${event.source || ''} ${event.channel || ''} ${event.title || ''}`));
+    await telegram(token, 'sendMessage', { chat_id: chatId, text: formatEvents(filtered, selected), reply_markup: keyboard() });
+    if (callback.id) await telegram(token, 'answerCallbackQuery', { callback_query_id: callback.id });
   } else {
-    await telegram(token, 'sendMessage', { chat_id: chatId, text: 'Scegli uno sport per vedere gli eventi di oggi su Sky:', reply_markup: mainKeyboard().reply_markup });
+    await telegram(token, 'sendMessage', { chat_id: chatId, text: 'Scegli uno sport per vedere gli eventi di oggi su Sky:', reply_markup: keyboard() });
   }
-  if (callback?.id) await telegram(token, 'answerCallbackQuery', { callback_query_id: callback.id });
   return { statusCode: 200, body: 'ok' };
 };
