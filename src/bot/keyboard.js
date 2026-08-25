@@ -6,10 +6,7 @@ export const sportKeyboard = (day = 'today') => ({ inline_keyboard: [
   [{ text: '📅 Domani', callback_data: 'day:tomorrow' }, { text: '🔄 Aggiorna', callback_data: 'day:today' }]
 ] });
 
-export const footballKeyboard = (day = 'today') => ({ inline_keyboard: [
-  [{ text: '🏆 Serie A', callback_data: `football:serie-a:${day}` }],
-  [{ text: '🥈 Serie B', callback_data: `football:serie-b:${day}` }],
-  [{ text: '🥉 Serie C', callback_data: `football:serie-c:${day}` }],
+export const footballKeyboard = (day = 'today') => ({ inline_keyboard: [  
   [{ text: '⬅️ Sport', callback_data: `menu:sports:${day}` }]
 ] });
 
