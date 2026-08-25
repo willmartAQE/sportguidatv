@@ -1,5 +1,5 @@
-import { readCache } from '../../src/storage/cache.js';
-import { CATEGORIES, mainKeyboard } from '../../src/bot/keyboard.js';
+const { readCache } = require('../../src/storage/cache.js');
+const { CATEGORIES, mainKeyboard } = require('../../src/bot/keyboard.js');
 
 const CATEGORY_RULES = {
   'Equitazione': event => /horse|equtv|equitaz|ippica|equestre/i.test(`${event.source || ''} ${event.channel || ''} ${event.title || ''}`),
@@ -22,7 +22,7 @@ async function telegram(token, method, payload) {
   return response.json();
 }
 
-export async function handler(event) {
+exports.handler = async function handler(event) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) return { statusCode: 500, body: 'Missing TELEGRAM_BOT_TOKEN' };
   const update = JSON.parse(event.body || '{}');
@@ -42,4 +42,4 @@ export async function handler(event) {
   }
   if (callback?.id) await telegram(token, 'answerCallbackQuery', { callback_query_id: callback.id });
   return { statusCode: 200, body: 'ok' };
-}
+};
