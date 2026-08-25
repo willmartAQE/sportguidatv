@@ -1,11 +1,11 @@
 import * as cheerio from 'cheerio';
 
-const SKY_URL = 'https://programmi.sky.it/sky-sport';
+const SKY_URL = 'https://www.superguidatv.it/canali/sky-sport/';
 const TIME_RE = /\b(?:[01]?\d|2[0-3])(?:[:.]\d{2})\b/;
-const NOISE_RE = /^(menu|home|sky sport|scopri|guida tv|programmi tv|login|registrati)$/i;
+const NOISE_RE = /^(menu|home|sky sport|scopri|guida tv|programmi tv|login|registrati|lista canali)$/i;
 
 function parseSkyEvent($, element) {
-  const text = $(element).clone().children().remove().end().text().replace(/\s+/g, ' ').trim();
+  const text = $(element).text().replace(/\s+/g, ' ').trim();
   const timeMatch = text.match(TIME_RE);
   if (!timeMatch) return null;
   const startTime = timeMatch[0].replace('.', ':').padStart(5, '0');
@@ -19,19 +19,15 @@ export async function fetchSkyEvents() {
   const html = await response.text();
   console.log('Sky HTTP response', JSON.stringify({ url: SKY_URL, status: response.status, contentType: response.headers.get('content-type'), bytes: html.length }));
   const $ = cheerio.load(html);
-  const candidates = $('[class*="event"], [class*="program"], article, li').toArray();
+  const candidates = $('article, li, tr, [class*="program"], [class*="palinsesto"], [class*="guida"]').toArray();
   const seen = new Set();
   const events = [];
-  const rejectedSamples = [];
   for (const element of candidates) {
     const event = parseSkyEvent($, element);
-    if (!event) {
-      if (rejectedSamples.length < 5) rejectedSamples.push($(element).text().replace(/\s+/g, ' ').trim().slice(0, 180));
-      continue;
-    }
+    if (!event) continue;
     const key = `${event.startTime}|${event.title.toLowerCase()}`;
     if (!seen.has(key)) { seen.add(key); events.push(event); }
   }
-  console.log('Sky parsing result', JSON.stringify({ rawMatches: candidates.length, filteredEvents: events.length, rejectedSamples }));
+  console.log('Sky parsing result', JSON.stringify({ rawMatches: candidates.length, filteredEvents: events.length }));
   return { events };
 }
