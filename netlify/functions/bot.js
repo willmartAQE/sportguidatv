@@ -42,23 +42,19 @@ function italyDate(offset = 0) {
   return `${y}-${m}-${d}`;
 }
 
-export default async (req) => {
-  if (req.method !== 'POST') {
-    return new Response('Method Not Allowed', { status: 405 });
+export const handler = async (event) => {
+  if (event.httpMethod !== 'POST') {
+    return { statusCode: 200, body: 'SportGuidaTV Bot OK' };
   }
 
-  const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
-  const incomingSecret = req.headers.get('x-telegram-bot-api-secret-token');
-  if (secret && incomingSecret !== secret) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  if (!process.env.TELEGRAM_BOT_TOKEN) {
-    return new Response('Missing TELEGRAM_BOT_TOKEN', { status: 500 });
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  if (!token) {
+    console.error('TELEGRAM_BOT_TOKEN non configurato');
+    return { statusCode: 500, body: 'Missing TELEGRAM_BOT_TOKEN' };
   }
 
   try {
-    const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
+    const bot = new Telegraf(token);
 
     bot.start((ctx) => ctx.reply(menuText(), { parse_mode: 'HTML', reply_markup: sportKeyboard('today') }));
 
@@ -76,7 +72,7 @@ export default async (req) => {
       const sport = ctx.match[1];
       const day = ctx.match[2];
       const offset = day === 'tomorrow' ? 1 : 0;
-      const cache = await getCache();
+      const cache = await getCache().catch(() => ({ events: [] }));
       const events = filterEvents(cache?.events || [], sport, null, italyDate(offset));
       await safeEdit(ctx, formatSchedule(sportLabels[sport] || sport, day, events), { 
         parse_mode: 'HTML', 
@@ -95,7 +91,7 @@ export default async (req) => {
       const competition = ctx.match[1];
       const day = ctx.match[2];
       const offset = day === 'tomorrow' ? 1 : 0;
-      const cache = await getCache();
+      const cache = await getCache().catch(() => ({ events: [] }));
       const events = filterEvents(cache?.events || [], 'calcio', competition, italyDate(offset));
       const label = competition.replace('serie-', 'Serie ').toUpperCase();
       await safeEdit(ctx, formatSchedule('Calcio', day, events, label), { 
@@ -117,12 +113,12 @@ export default async (req) => {
       });
     });
 
-    const body = await req.json();
-    await bot.handleUpdate(body);
+    const update = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+    await bot.handleUpdate(update);
 
-    return new Response('OK', { status: 200 });
+    return { statusCode: 200, body: 'OK' };
   } catch (error) {
     console.error('Telegram webhook error:', error?.stack || error);
-    return new Response('OK', { status: 200 });
+    return { statusCode: 200, body: 'OK' };
   }
 };
