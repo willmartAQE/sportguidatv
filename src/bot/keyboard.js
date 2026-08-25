@@ -1,18 +1,22 @@
-export const sportKeyboard = (day = 'today') => ({ inline_keyboard: [
-  [{ text: '⚽ Calcio', callback_data: `sport:calcio:${day}` }, { text: '🎾 Tennis', callback_data: `sport:tennis:${day}` }],
-  [{ text: '🏎 Formula 1', callback_data: `sport:f1:${day}` }, { text: '🏍 MotoGP', callback_data: `sport:motogp:${day}` }],
-  [{ text: '🏀 Basket', callback_data: `sport:basket:${day}` }, { text: '🏐 Volley', callback_data: `sport:volley:${day}` }],
-  [{ text: '🐎 Equitazione', callback_data: `sport:equitazione:${day}` }],
-  [{ text: '📅 Domani', callback_data: 'day:tomorrow' }, { text: '🔄 Aggiorna', callback_data: 'day:today' }]
-] });
+const CATEGORIES = ['Equitazione', 'Formula 1', 'MotoGP', 'Sky Calcio', 'Tennis', 'Basket', 'Golf', 'Sport'];
 
-export const footballKeyboard = (day = 'today') => ({ inline_keyboard: [
-  [{ text: '🏆 Serie A', callback_data: `football:serie-a:${day}` }],
-  [{ text: '🥈 Serie B', callback_data: `football:serie-b:${day}` }],
-  [{ text: '🥉 Serie C', callback_data: `football:serie-c:${day}` }],
-  [{ text: '⬅️ Sport', callback_data: `menu:sports:${day}` }]
-] });
+export function mainKeyboard() {
+  return {
+    reply_markup: {
+      keyboard: CATEGORIES.map(category => [{ text: category }]),
+      resize_keyboard: true,
+      one_time_keyboard: false
+    }
+  };
+}
 
-export const backKeyboard = (day = 'today') => ({ inline_keyboard: [
-  [{ text: '⬅️ Sport', callback_data: `menu:sports:${day}` }, { text: '📅 Domani', callback_data: 'day:tomorrow' }]
-] });
+export function categoryKeyboard(categories = CATEGORIES) {
+  const visible = categories.filter(category => CATEGORIES.includes(category));
+  return {
+    reply_markup: {
+      inline_keyboard: visible.map(category => [{ text: category, callback_data: `category:${category}` }])
+    }
+  };
+}
+
+export { CATEGORIES };
