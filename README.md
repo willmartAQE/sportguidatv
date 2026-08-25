@@ -1,4 +1,4 @@
-# Sport Guida TV
+# Sport Guida TV. 
 
 MVP di un bot Telegram che mostra gli eventi sportivi live in programmazione su Sky.
 
