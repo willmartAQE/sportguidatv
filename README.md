@@ -4,7 +4,7 @@ MVP di un bot Telegram che mostra gli eventi sportivi live in programmazione su 
 
 ## Sport
 
-Calcio Serie A/B/C, tennis, Formula 1, MotoGP, basket e volley.
+Calcio Serie A/B/C, tennis, Formula 1, MotoGP, basket, volley e d equitazione.
 
 ## Deploy
 
