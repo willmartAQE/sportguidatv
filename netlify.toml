@@ -1,8 +1,2 @@
-[build]
-  functions = "netlify/functions"
-
-[functions]
-  node_bundler = "esbuild"
-
-[functions.refresh-schedule]
-  schedule = "0 6 * * *"
+[build.environment]
+  NODE_VERSION = "20"
