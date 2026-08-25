@@ -13,21 +13,11 @@ const CATEGORY_RULES = {
   'Sport': /.*/i
 };
 
-function keyboard() {
-  return { inline_keyboard: CATEGORIES.map(category => [{ text: category, callback_data: `category:${category}` }]) };
-}
+function keyboard() { return { inline_keyboard: CATEGORIES.map(category => [{ text: category, callback_data: `category:${category}` }]) }; }
 
 async function readEvents() {
-  const candidates = [
-    path.join(process.cwd(), 'events.json'),
-    path.join(process.cwd(), 'data', 'events.json'),
-    path.join(process.cwd(), 'src', 'storage', 'events.json')
-  ];
-  for (const file of candidates) {
-    try {
-      const value = JSON.parse(await fs.readFile(file, 'utf8'));
-      return Array.isArray(value) ? value : (value.events || []);
-    } catch (_) {}
+  for (const file of [path.join(process.cwd(), 'events.json'), path.join(process.cwd(), 'data', 'events.json'), path.join(process.cwd(), 'src', 'storage', 'events.json')]) {
+    try { const value = JSON.parse(await fs.readFile(file, 'utf8')); return Array.isArray(value) ? value : (value.events || []); } catch (_) {}
   }
   return [];
 }
@@ -53,15 +43,22 @@ exports.handler = async function handler(event) {
   const callback = update.callback_query;
   const chatId = message?.chat?.id || callback?.message?.chat?.id;
   if (!chatId) return { statusCode: 200, body: 'ok' };
-  const events = await readEvents();
-  const selected = callback?.data?.startsWith('category:') ? callback.data.slice(9) : null;
-  if (selected && CATEGORIES.includes(selected)) {
-    const rule = CATEGORY_RULES[selected];
-    const filtered = events.filter(event => rule.test(`${event.source || ''} ${event.channel || ''} ${event.title || ''}`));
-    await telegram(token, 'sendMessage', { chat_id: chatId, text: formatEvents(filtered, selected), reply_markup: keyboard() });
-    if (callback.id) await telegram(token, 'answerCallbackQuery', { callback_query_id: callback.id });
-  } else {
-    await telegram(token, 'sendMessage', { chat_id: chatId, text: 'Scegli uno sport per vedere gli eventi di oggi su Sky:', reply_markup: keyboard() });
+  try {
+    const events = await readEvents();
+    const callbackCategory = callback?.data?.startsWith('category:') ? callback.data.slice('category:'.length) : null;
+    const text = message?.text?.trim() || '';
+    const requestedCategory = callbackCategory || CATEGORIES.find(category => category.toLowerCase() === text.toLowerCase());
+    if (requestedCategory) {
+      const rule = CATEGORY_RULES[requestedCategory];
+      const filtered = events.filter(item => rule.test(`${item.source || ''} ${item.channel || ''} ${item.title || ''}`));
+      await telegram(token, 'sendMessage', { chat_id: chatId, text: formatEvents(filtered, requestedCategory), reply_markup: keyboard() });
+    } else {
+      await telegram(token, 'sendMessage', { chat_id: chatId, text: 'Scegli uno sport per vedere gli eventi di oggi su Sky:', reply_markup: keyboard() });
+    }
+    if (callback?.id) await telegram(token, 'answerCallbackQuery', { callback_query_id: callback.id });
+    return { statusCode: 200, body: 'ok' };
+  } catch (error) {
+    console.error('Telegram webhook error:', error);
+    return { statusCode: 200, body: 'ok' };
   }
-  return { statusCode: 200, body: 'ok' };
 };
